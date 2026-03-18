@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameVault - Mi Perfil</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo"><i class="fas fa-gamepad"></i> GameVault</h1>
+                <nav class="main-nav">
+                    <a href="index.html"><i class="fas fa-home"></i> Inicio</a>
+                    <a href="perfil.html" class="active"><i class="fas fa-user"></i> Mi Perfil</a>
+                    <button id="logoutBtn" class="logout-button"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="profile-header">
+            <div class="profile-info">
+                <h2 id="profileUsername"></h2>
+                <p id="profileEmail"></p>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalJuegos">0</span>
+                    <span class="stat-label">Juegos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalCompletados">0</span>
+                    <span class="stat-label">Completados</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalFavoritos">0</span>
+                    <span class="stat-label">Favoritos</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-tabs">
+            <button class="tab-button active" onclick="showTab('biblioteca')">Mi Biblioteca</button>
+            <button class="tab-button" onclick="showTab('completados')">Completados</button>
+            <button class="tab-button" onclick="showTab('favoritos')">Favoritos</button>
+            <button class="tab-button" onclick="showTab('reseñas')">Mis Reseñas</button>
+        </div>
+
+        <div id="biblioteca" class="tab-content active">
+            <h3><i class="fas fa-book"></i> Mi Biblioteca</h3>
+            <div id="bibliotecaGrid" class="games-grid"></div>
+        </div>
+
+        <div id="completados" class="tab-content">
+            <h3><i class="fas fa-check-circle"></i> Juegos Completados</h3>
+            <div id="completadosGrid" class="games-grid"></div>
+        </div>
+
+        <div id="favoritos" class="tab-content">
+            <h3><i class="fas fa-heart"></i> Juegos Favoritos</h3>
+            <div id="favoritosGrid" class="games-grid"></div>
+        </div>
+
+        <div id="reseñas" class="tab-content">
+            <h3><i class="fas fa-star"></i> Mis Reseñas</h3>
+            <div id="reseñasList"></div>
+        </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script src="js/perfil.js"></script>
+</body>
+</html>

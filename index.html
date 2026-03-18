@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameVault - Biblioteca de Videojuegos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo"><i class="fas fa-gamepad"></i> GameVault</h1>
+                
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Buscar videojuegos..." class="search-input">
+                    <button id="searchButton" class="search-button"><i class="fas fa-search"></i> Buscar</button>
+                </div>
+
+                <nav class="main-nav">
+                    <a href="index.html" class="active"><i class="fas fa-home"></i> Inicio</a>
+                    <div id="authLinks">
+                        <!-- Se llenará con JavaScript -->
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="results-info">
+            <h2 id="resultsTitle">Juegos destacados</h2>
+            <span id="resultsCount"></span>
+        </div>
+        
+        <div id="gamesGrid" class="games-grid"></div>
+        
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Cargando...
+        </div>
+    </main>
+
+    <!-- Modal para detalles del juego -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal"><i class="fas fa-times"></i></span>
+            <div id="gameDetails" class="game-details"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>GameVault - Biblioteca de videojuegos | Datos proporcionados por RAWG API</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/juegos.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
