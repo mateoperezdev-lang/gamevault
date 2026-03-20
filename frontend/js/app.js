@@ -1,6 +1,4 @@
-// frontend/js/app.js - VERSIÓN FINAL
-// Los juegos se cargan siempre, el login es solo para acciones
-
+// frontend/js/app.js - VERSIÓN SIN MODAL AUTOMÁTICO
 const App = (() => {
     const elements = {
         gamesGrid: document.getElementById('gamesGrid'),
@@ -17,7 +15,6 @@ const App = (() => {
     let currentSearchTerm = '';
     const ITEMS_PER_PAGE = 20;
 
-    // ===== FUNCIONES AUXILIARES =====
     const toggleLoading = (show) => {
         if (elements.loadingSpinner) {
             elements.loadingSpinner.style.display = show ? 'flex' : 'none';
@@ -31,7 +28,7 @@ const App = (() => {
         }
     };
 
-    // ===== ACTUALIZAR BOTONES DE AUTENTICACIÓN (SIEMPRE VISIBLES) =====
+    // ===== ACTUALIZAR BOTONES DE AUTENTICACIÓN (sin modales) =====
     const updateAuthLinks = () => {
         if (elements.authLinks) {
             if (Auth.isAuthenticated()) {
@@ -51,7 +48,7 @@ const App = (() => {
         }
     };
 
-    // ===== CARGA DE JUEGOS (SIEMPRE SE EJECUTA) =====
+    // ===== CARGA DE JUEGOS =====
     const cargarJuegos = async (page = 1, searchTerm = '') => {
         try {
             toggleLoading(true);
@@ -71,34 +68,15 @@ const App = (() => {
             if (juegos && juegos.length > 0) {
                 JuegosUI.mostrarJuegos(juegos, elements.gamesGrid, true);
                 updateResultsCount(juegos.length, totalJuegos);
-                
-                // Actualizar paginación
                 Paginacion.setTotalPages(totalJuegos);
                 Paginacion.setCurrentPage(page);
             } else {
                 elements.gamesGrid.innerHTML = '<div class="no-results">No se encontraron juegos</div>';
-                updateResultsCount(0);
             }
             
         } catch (error) {
-            console.error('❌ Error al cargar juegos:', error);
-            // Mostrar mensaje de error pero NO afecta los botones de login
-            elements.gamesGrid.innerHTML = `
-                <div class="error-message" style="text-align: center; padding: 60px 20px;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: var(--accent-primary); margin-bottom: 20px;"></i>
-                    <h3 style="margin-bottom: 15px;">Error de conexión</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">No se pudieron cargar los juegos. Por favor:</p>
-                    <ul style="text-align: left; max-width: 400px; margin: 0 auto 20px; color: var(--text-secondary);">
-                        <li>✓ Verifica tu conexión a internet</li>
-                        <li>✓ Recarga la página</li>
-                        <li>✓ Si el problema persiste, intenta más tarde</li>
-                    </ul>
-                    <button onclick="location.reload()" class="action-button" style="margin: 0 auto; display: inline-block; padding: 12px 24px;">
-                        <i class="fas fa-sync-alt"></i> Recargar página
-                    </button>
-                </div>
-            `;
-            updateResultsCount(0);
+            console.error('❌ Error:', error);
+            elements.gamesGrid.innerHTML = '<div class="error">Error al cargar juegos</div>';
         } finally {
             toggleLoading(false);
         }
@@ -108,21 +86,20 @@ const App = (() => {
     const buscar = () => {
         const searchTerm = elements.searchInput.value.trim();
         currentSearchTerm = searchTerm;
-        
         Paginacion.setSearchTerm(searchTerm);
         cargarJuegos(1, searchTerm);
     };
 
-    // ===== DETALLES DEL JUEGO =====
+    // ===== DETALLES DEL JUEGO (MODAL SOLO AQUÍ) =====
     const mostrarDetalle = async (id) => {
         try {
             toggleLoading(true);
             const juego = await API.obtenerJuegoDetalle(id);
             JuegosUI.mostrarDetallesJuego(juego);
-            elements.gameModal.style.display = 'block';
+            elements.gameModal.style.display = 'block'; // ← ÚNICO lugar donde se abre el modal
         } catch (error) {
-            console.error('Error al mostrar detalles:', error);
-            alert('Error al cargar los detalles del juego');
+            console.error('Error:', error);
+            alert('Error al cargar los detalles');
         } finally {
             toggleLoading(false);
         }
@@ -132,26 +109,21 @@ const App = (() => {
         elements.gameModal.style.display = 'none';
     };
 
-    // ===== MANEJADOR DE CAMBIO DE PÁGINA =====
     const handlePageChange = (page) => {
         cargarJuegos(page, currentSearchTerm);
     };
 
-    // ===== CONFIGURAR EVENTOS =====
     const setupEventListeners = () => {
-        // Búsqueda
         elements.searchButton.addEventListener('click', buscar);
         elements.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') buscar();
         });
 
-        // Modal
         elements.closeModal.addEventListener('click', cerrarModal);
         window.addEventListener('click', (e) => {
             if (e.target === elements.gameModal) cerrarModal();
         });
 
-        // Click en tarjetas (solo si no es un botón de acción)
         elements.gamesGrid.addEventListener('click', (e) => {
             const gameCard = e.target.closest('.game-card');
             if (gameCard && !e.target.classList.contains('action-button')) {
@@ -161,34 +133,17 @@ const App = (() => {
         });
     };
 
-    // ===== INICIALIZACIÓN =====
     const init = () => {
-        console.log('🚀 Inicializando GameVault...');
-        
-        // 1. PRIMERO: Configurar eventos
+        console.log('🚀 Iniciando GameVault...');
         setupEventListeners();
-        
-        // 2. SEGUNDO: Actualizar botones de autenticación (SIEMPRE)
-        updateAuthLinks();
-        
-        // 3. TERCERO: Inicializar paginación
+        updateAuthLinks(); // ← Esto SOLO pone los botones, NO abre modales
         Paginacion.init(handlePageChange);
-        
-        // 4. CUARTO: Cargar juegos (SIEMPRE, aunque falle)
-        console.log('🎮 Cargando juegos...');
-        cargarJuegos(1);
+        cargarJuegos(1); // ← Carga los juegos, NO abre modales
     };
 
-    // API pública
-    return {
-        init,
-        buscar,
-        mostrarDetalle,
-        cerrarModal
-    };
+    return { init, buscar, mostrarDetalle, cerrarModal };
 })();
 
-// Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
