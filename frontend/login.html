@@ -4,30 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameVault - Iniciar Sesión</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
 <body>
     <div class="auth-container">
         <div class="auth-box">
-            <h1 class="logo"><i class="fas fa-gamepad"></i>GameVault</h1>
+            <h1 class="logo"><i class="fas fa-gamepad"></i> GameVault</h1>
             <h2>Iniciar Sesión</h2>
-
+            
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="email"><i class="fas fa-envelope"></i>Email</label>
+                    <label for="email"><i class="fas fa-envelope"></i> Email</label>
                     <input type="email" id="email" placeholder="tu@email.com" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password"><i class="fas fa-lock"></i>Contraseña</label>
+                    <label for="password"><i class="fas fa-lock"></i> Contraseña</label>
                     <input type="password" id="password" placeholder="••••••••" required>
                 </div>
-
+                
                 <button type="submit" class="auth-button">Iniciar Sesión</button>
             </form>
-
-            <p class="auth-link">¿No tienes cuenta? <a href="registro.html">Regitrate aquí</a></p>
+            
+            <p class="auth-link">
+                <a href="index.html"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+                | ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+            </p>
+            
+            <p class="auth-note" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 20px;">
+                <i class="fas fa-info-circle"></i> Serás redirigido al inicio si no realizas ninguna acción en 30 segundos.
+            </p>
         </div>
     </div>
 

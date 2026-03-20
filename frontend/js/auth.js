@@ -1,4 +1,4 @@
-// frontend/js/auth.js - VERSIÓN CORREGIDA (sin modales automáticos)
+// frontend/js/auth.js - VERSIÓN COMPLETA CON AUTO-REDIRECCIÓN
 const Auth = (() => {
     const USERS_KEY = 'gamevault_users';
     const CURRENT_USER_KEY = 'gamevault_current_user';
@@ -52,7 +52,7 @@ const Auth = (() => {
 
     const logout = () => {
         localStorage.removeItem(CURRENT_USER_KEY);
-        window.location.href = 'index.html'; // Redirige al inicio
+        window.location.href = 'index.html';
     };
 
     const getCurrentUser = () => {
@@ -75,11 +75,31 @@ const Auth = (() => {
         }
     };
 
-    // SOLO ESTO - NADA DE MODALES AUTOMÁTICOS
     document.addEventListener('DOMContentLoaded', () => {
         init();
 
-        // Registro
+        // ===== AUTO-REDIRECCIÓN: Volver a index si no hay acción =====
+        const currentPage = window.location.pathname.split('/').pop();
+        
+        if (currentPage === 'login.html' || currentPage === 'registro.html') {
+            const redirectTarget = sessionStorage.getItem('redirectAfterLogin');
+            
+            // Si no hay redirección pendiente (vino directo, no desde una acción)
+            if (!redirectTarget) {
+                console.log('🕒 Página de autenticación - Auto-redirección en 30 segundos');
+                
+                // Auto-redirigir después de 30 segundos de inactividad
+                setTimeout(() => {
+                    // Verificar si todavía está en la misma página
+                    if (window.location.pathname.includes('login.html') || 
+                        window.location.pathname.includes('registro.html')) {
+                        window.location.href = 'index.html';
+                    }
+                }, 30000); // 30 segundos
+            }
+        }
+
+        // REGISTRO
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
             registerForm.addEventListener('submit', (e) => {
@@ -105,7 +125,7 @@ const Auth = (() => {
             });
         }
 
-        // Login
+        // LOGIN
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => {
@@ -115,15 +135,25 @@ const Auth = (() => {
                 const password = document.getElementById('password').value;
 
                 try {
-                    login(email, password);
-                    window.location.href = 'index.html';
+                    const user = login(email, password);
+                    
+                    if (user) {
+                        // Verificar si hay una redirección pendiente
+                        const redirectTarget = sessionStorage.getItem('redirectAfterLogin') || 'index.html';
+                        
+                        // Limpiar el sessionStorage
+                        sessionStorage.removeItem('redirectAfterLogin');
+                        
+                        // Redirigir
+                        window.location.href = redirectTarget;
+                    }
                 } catch (error) {
                     alert(error.message);
                 }
             });
         }
 
-        // Logout
+        // LOGOUT
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
