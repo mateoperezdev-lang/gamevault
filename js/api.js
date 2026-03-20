@@ -1,48 +1,72 @@
+// js/api.js - VERSIÓN PARA RENDER
 const API = (() => {
-    const BASE_URL = 'https://api.rawg.io/api';
-    const API_KEY = '87f84c6113cb45a8a5cceb4ad9a5069f';
-    const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+    // Detectar entorno
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1';
+    
+    // IMPORTANTE: Cambia esta URL por la de tu backend en Render
+    const RENDER_URL = 'https://gamevault.onrender.com'; // TU URL AQUÍ
+    
+    const BASE_URL = isLocal 
+        ? 'http://localhost:3000'  // Backend local
+        : RENDER_URL;               // Backend en Render
     
     const handleResponse = async (response) => {
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
-        const data = await response.json();
-        return data;
+        return await response.json();
     };
 
     const obtenerJuegos = async (page = 1, pageSize = 20) => {
         try {
-            const url = `${CORS_PROXY}${BASE_URL}/games?key=${API_KEY}&page=${page}&page_size=${pageSize}&ordering=-rating&dates=2010-01-01,2024-12-31&metacritic=70,100`;
-            const response = await fetch(url);
+            const url = `${BASE_URL}/api/juegos?page=${page}&page_size=${pageSize}`;
+            console.log('📡 Fetching desde:', url);
+            
+            const response = await fetch(url, {
+                mode: 'cors',
+                credentials: 'include'
+            });
+            
             const data = await handleResponse(response);
             return data.results || [];
         } catch (error) {
-            console.error('Error al obtener juegos:', error);
+            console.error('❌ Error al obtener juegos:', error);
             throw error;
         }
     };
 
     const buscarJuegos = async (nombre, page = 1, pageSize = 20) => {
         try {
-            const url = `${CORS_PROXY}${BASE_URL}/games?key=${API_KEY}&search=${encodeURIComponent(nombre)}&page=${page}&page_size=${pageSize}&ordering=-rating`;
-            const response = await fetch(url);
+            const url = `${BASE_URL}/api/juegos?busqueda=${encodeURIComponent(nombre)}&page=${page}&page_size=${pageSize}`;
+            console.log('📡 Buscando en:', url);
+            
+            const response = await fetch(url, {
+                mode: 'cors',
+                credentials: 'include'
+            });
+            
             const data = await handleResponse(response);
             return data.results || [];
         } catch (error) {
-            console.error('Error al buscar juegos:', error);
+            console.error('❌ Error al buscar juegos:', error);
             throw error;
         }
     };
 
     const obtenerJuegoDetalle = async (id) => {
         try {
-            const url = `${CORS_PROXY}${BASE_URL}/games/${id}?key=${API_KEY}`;
-            const response = await fetch(url);
-            const data = await handleResponse(response);
-            return data;
+            const url = `${BASE_URL}/api/juego/${id}`;
+            console.log('📡 Detalles desde:', url);
+            
+            const response = await fetch(url, {
+                mode: 'cors',
+                credentials: 'include'
+            });
+            
+            return await handleResponse(response);
         } catch (error) {
-            console.error('Error al obtener detalles del juego:', error);
+            console.error('❌ Error al obtener detalles:', error);
             throw error;
         }
     };

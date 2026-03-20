@@ -1,4 +1,4 @@
-// js/app.js
+// js/app.js - VERSIÓN CON PAGINACIÓN
 const App = (() => {
     const elements = {
         gamesGrid: document.getElementById('gamesGrid'),
@@ -9,17 +9,25 @@ const App = (() => {
         loadingSpinner: document.getElementById('loadingSpinner'),
         resultsTitle: document.getElementById('resultsTitle'),
         resultsCount: document.getElementById('resultsCount'),
-        authLinks: document.getElementById('authLinks')
+        authLinks: document.getElementById('authLinks'),
+        paginationContainer: document.getElementById('paginationContainer')
     };
 
     let currentSearchTerm = '';
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 20;
 
     const toggleLoading = (show) => {
-        elements.loadingSpinner.style.display = show ? 'block' : 'none';
+        if (elements.loadingSpinner) {
+            elements.loadingSpinner.style.display = show ? 'flex' : 'none';
+        }
     };
 
-    const updateResultsCount = (count) => {
-        elements.resultsCount.textContent = `${count} juegos encontrados`;
+    const updateResultsCount = (count, total = null) => {
+        if (elements.resultsCount) {
+            const totalText = total ? ` de ${total}` : '';
+            elements.resultsCount.textContent = `${count} juegos mostrados${totalText}`;
+        }
     };
 
     const updateAuthLinks = () => {
@@ -41,43 +49,53 @@ const App = (() => {
         }
     };
 
-    const iniciarApp = async () => {
+    const cargarJuegos = async (page = 1, searchTerm = '') => {
         try {
             toggleLoading(true);
-            const juegos = await API.obtenerJuegos();
+            
+            let juegos;
+            if (searchTerm) {
+                juegos = await API.buscarJuegos(searchTerm, page, ITEMS_PER_PAGE);
+            } else {
+                juegos = await API.obtenerJuegos(page, ITEMS_PER_PAGE);
+            }
+            
             JuegosUI.mostrarJuegos(juegos, elements.gamesGrid, true);
             updateResultsCount(juegos.length);
-            elements.resultsTitle.textContent = 'Juegos destacados';
-            updateAuthLinks();
+            
+            // Actualizar título
+            if (searchTerm) {
+                elements.resultsTitle.textContent = `Resultados para: "${searchTerm}"`;
+            } else {
+                elements.resultsTitle.textContent = 'Juegos destacados';
+            }
+            
+            // Actualizar paginación (asumiendo que la API devuelve total_count)
+            // Si no tienes total_count, puedes estimarlo o mantener el actual
+            if (juegos.total_count) {
+                Paginacion.setTotalPages(juegos.total_count);
+            }
+            
         } catch (error) {
-            console.error('Error al iniciar la aplicación:', error);
-            elements.gamesGrid.innerHTML = '<div class="error">Error al cargar los juegos. Por favor, intenta de nuevo.</div>';
+            console.error('Error al cargar juegos:', error);
+            elements.gamesGrid.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error al cargar los juegos. Por favor, intenta de nuevo.
+                </div>
+            `;
         } finally {
             toggleLoading(false);
         }
     };
 
-    const buscar = async () => {
+    const buscar = () => {
         const searchTerm = elements.searchInput.value.trim();
+        currentSearchTerm = searchTerm;
+        currentPage = 1;
         
-        if (!searchTerm) {
-            await iniciarApp();
-            return;
-        }
-
-        try {
-            toggleLoading(true);
-            currentSearchTerm = searchTerm;
-            const juegos = await API.buscarJuegos(searchTerm);
-            JuegosUI.mostrarJuegos(juegos, elements.gamesGrid, true);
-            updateResultsCount(juegos.length);
-            elements.resultsTitle.textContent = `Resultados para: "${searchTerm}"`;
-        } catch (error) {
-            console.error('Error al buscar juegos:', error);
-            elements.gamesGrid.innerHTML = '<div class="error">Error al buscar juegos. Por favor, intenta de nuevo.</div>';
-        } finally {
-            toggleLoading(false);
-        }
+        Paginacion.setSearchTerm(searchTerm);
+        cargarJuegos(currentPage, searchTerm);
     };
 
     const mostrarDetalle = async (id) => {
@@ -87,7 +105,7 @@ const App = (() => {
             JuegosUI.mostrarDetallesJuego(juego);
             elements.gameModal.style.display = 'block';
         } catch (error) {
-            console.error('Error al mostrar detalles del juego:', error);
+            console.error('Error al mostrar detalles:', error);
             alert('Error al cargar los detalles del juego');
         } finally {
             toggleLoading(false);
@@ -98,23 +116,25 @@ const App = (() => {
         elements.gameModal.style.display = 'none';
     };
 
+    const handlePageChange = (page, searchTerm) => {
+        currentPage = page;
+        cargarJuegos(page, searchTerm);
+    };
+
     const setupEventListeners = () => {
+        // Búsqueda
         elements.searchButton.addEventListener('click', buscar);
-
         elements.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                buscar();
-            }
+            if (e.key === 'Enter') buscar();
         });
 
+        // Modal
         elements.closeModal.addEventListener('click', cerrarModal);
-
         window.addEventListener('click', (e) => {
-            if (e.target === elements.gameModal) {
-                cerrarModal();
-            }
+            if (e.target === elements.gameModal) cerrarModal();
         });
 
+        // Click en tarjetas (delegación)
         elements.gamesGrid.addEventListener('click', (e) => {
             const gameCard = e.target.closest('.game-card');
             if (gameCard && !e.target.classList.contains('action-button')) {
@@ -125,8 +145,22 @@ const App = (() => {
     };
 
     const init = () => {
+        // Verificar si hay contenedor de paginación, si no, crearlo
+        if (!document.getElementById('paginationContainer')) {
+            const main = document.querySelector('main .container');
+            const paginationDiv = document.createElement('div');
+            paginationDiv.id = 'paginationContainer';
+            main.appendChild(paginationDiv);
+        }
+
         setupEventListeners();
-        iniciarApp();
+        updateAuthLinks();
+        
+        // Inicializar paginación
+        Paginacion.init(handlePageChange);
+        
+        // Cargar primera página
+        cargarJuegos(1);
     };
 
     return {
@@ -137,6 +171,7 @@ const App = (() => {
     };
 })();
 
+// Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
