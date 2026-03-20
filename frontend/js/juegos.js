@@ -1,4 +1,6 @@
-// frontend/js/juegos.js - VERSIÓN SIN TRADUCCIÓN
+// frontend/js/juegos.js - VERSIÓN FINAL
+// Los juegos se ven siempre, acciones protegidas piden login
+
 const JuegosUI = (() => {
     const getRatingClass = (rating) => {
         if (rating >= 4) return 'rating-high';
@@ -12,6 +14,7 @@ const JuegosUI = (() => {
         return new Date(dateString).toLocaleDateString('es-ES', options);
     };
 
+    // ===== CREAR TARJETA DE JUEGO (SIEMPRE VISIBLE) =====
     const crearTarjetaJuego = (juego, showActions = true) => {
         const card = document.createElement('div');
         card.className = 'game-card';
@@ -22,21 +25,26 @@ const JuegosUI = (() => {
         const ratingClass = getRatingClass(rating);
         const fecha = juego.released ? new Date(juego.released).getFullYear() : 'Año desconocido';
 
+        // Los botones de acción se muestran SIEMPRE, pero si no hay sesión, piden login
         let actionsHTML = '';
-        if (showActions && Auth.isAuthenticated()) {
-            const user = Auth.getCurrentUser();
-            const isCompletado = user.completados?.includes(juego.id) || false;
-            const isFavorito = user.favoritos?.includes(juego.id) || false;
+        if (showActions) {
+            // Verificar si el usuario está autenticado para mostrar estado activo
+            const user = Auth.isAuthenticated() ? Auth.getCurrentUser() : null;
+            const isCompletado = user?.completados?.includes(juego.id) || false;
+            const isFavorito = user?.favoritos?.includes(juego.id) || false;
 
             actionsHTML = `
                 <div class="game-card-actions">
-                    <button class="action-button ${isCompletado ? 'active' : ''}" onclick="event.stopPropagation(); JuegosUI.toggleCompletado(${juego.id})">
+                    <button class="action-button ${isCompletado ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); JuegosUI.handleCompletado(${juego.id})">
                         <i class="fas ${isCompletado ? 'fa-check-circle' : 'fa-circle'}"></i>
                     </button>
-                    <button class="action-button ${isFavorito ? 'active' : ''}" onclick="event.stopPropagation(); JuegosUI.toggleFavorito(${juego.id})">
+                    <button class="action-button ${isFavorito ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); JuegosUI.handleFavorito(${juego.id})">
                         <i class="fas ${isFavorito ? 'fa-heart' : 'fa-heart'}"></i>
                     </button>
-                    <button class="action-button" onclick="event.stopPropagation(); JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
+                    <button class="action-button" 
+                            onclick="event.stopPropagation(); JuegosUI.handleReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
                         <i class="fas fa-star"></i>
                     </button>
                 </div>
@@ -60,10 +68,11 @@ const JuegosUI = (() => {
         return card;
     };
 
+    // ===== MOSTRAR JUEGOS (SIEMPRE) =====
     const mostrarJuegos = (juegos, contenedor, showActions = true) => {
         contenedor.innerHTML = '';
         
-        if (juegos.length === 0) {
+        if (!juegos || juegos.length === 0) {
             contenedor.innerHTML = '<div class="no-results">No se encontraron juegos</div>';
             return;
         }
@@ -74,9 +83,51 @@ const JuegosUI = (() => {
         });
     };
 
+    // ===== MANEJADORES DE ACCIONES CON VERIFICACIÓN DE LOGIN =====
+
+    // Manejar clic en completado
+    const handleCompletado = (juegoId) => {
+        // Verificar si el usuario está autenticado
+        if (!Auth.isAuthenticated()) {
+            alert('Debes iniciar sesión para marcar juegos como completados');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Si está autenticado, ejecutar la acción
+        toggleCompletado(juegoId);
+    };
+
+    // Manejar clic en favorito
+    const handleFavorito = (juegoId) => {
+        // Verificar si el usuario está autenticado
+        if (!Auth.isAuthenticated()) {
+            alert('Debes iniciar sesión para agregar juegos a favoritos');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Si está autenticado, ejecutar la acción
+        toggleFavorito(juegoId);
+    };
+
+    // Manejar clic en reseña
+    const handleReseña = (juegoId, juegoNombre) => {
+        // Verificar si el usuario está autenticado
+        if (!Auth.isAuthenticated()) {
+            alert('Debes iniciar sesión para escribir una reseña');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Si está autenticado, mostrar modal de reseña
+        mostrarModalReseña(juegoId, juegoNombre);
+    };
+
+    // ===== ACCIONES REALES (SOLO PARA USUARIOS AUTENTICADOS) =====
     const toggleCompletado = (juegoId) => {
         const user = Auth.getCurrentUser();
-        if (!user) return;
+        if (!user) return; // Por seguridad, aunque ya verificamos antes
 
         const index = user.completados.indexOf(juegoId);
         if (index === -1) {
@@ -86,7 +137,7 @@ const JuegosUI = (() => {
         }
 
         Auth.updateUser(user);
-        location.reload();
+        location.reload(); // Recargar para actualizar la interfaz
     };
 
     const toggleFavorito = (juegoId) => {
@@ -104,14 +155,13 @@ const JuegosUI = (() => {
         location.reload();
     };
 
+    // ===== MODAL DE DETALLES DEL JUEGO (SIEMPRE ACCESIBLE) =====
     const mostrarDetallesJuego = (juego) => {
         const detallesContainer = document.getElementById('gameDetails');
         
         const imagen = juego.background_image || 'https://via.placeholder.com/800x400/1a1e24/6366f1?text=Sin+Imagen';
         const ratingClass = getRatingClass(juego.rating);
         const fecha = formatDate(juego.released);
-        
-        // USAR DESCRIPCIÓN EN INGLÉS (la original)
         const descripcion = juego.description_raw || 'No hay descripción disponible para este juego.';
         
         const plataformas = juego.platforms 
@@ -126,27 +176,37 @@ const JuegosUI = (() => {
             ? juego.developers[0].name
             : 'Información no disponible';
 
+        // Botones de acción en el modal (también protegidos)
         let userActionsHTML = '';
         if (Auth.isAuthenticated()) {
             const user = Auth.getCurrentUser();
             const isCompletado = user.completados?.includes(juego.id) || false;
             const isFavorito = user.favoritos?.includes(juego.id) || false;
-            const userResena = user.resenas?.find(r => r.juegoId === juego.id);
 
             userActionsHTML = `
                 <div class="game-details-actions">
-                    <button class="action-button ${isCompletado ? 'active' : ''}" onclick="JuegosUI.toggleCompletado(${juego.id})">
+                    <button class="action-button ${isCompletado ? 'active' : ''}" onclick="JuegosUI.handleCompletado(${juego.id})">
                         <i class="fas ${isCompletado ? 'fa-check-circle' : 'fa-circle'}"></i>
                         ${isCompletado ? 'Completado' : 'Marcar como completado'}
                     </button>
-                    <button class="action-button ${isFavorito ? 'active' : ''}" onclick="JuegosUI.toggleFavorito(${juego.id})">
+                    <button class="action-button ${isFavorito ? 'active' : ''}" onclick="JuegosUI.handleFavorito(${juego.id})">
                         <i class="fas ${isFavorito ? 'fa-heart' : 'fa-heart'}"></i>
                         ${isFavorito ? 'Favorito' : 'Añadir a favoritos'}
                     </button>
-                    <button class="action-button" onclick="JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
+                    <button class="action-button" onclick="JuegosUI.handleReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
                         <i class="fas fa-star"></i>
-                        ${userResena ? 'Editar reseña' : 'Escribir reseña'}
+                        Escribir reseña
                     </button>
+                </div>
+            `;
+        } else {
+            // Si no está autenticado, mostrar mensaje
+            userActionsHTML = `
+                <div class="game-details-actions" style="justify-content: center; padding: 20px;">
+                    <p style="color: var(--text-secondary);">
+                        <i class="fas fa-info-circle"></i> 
+                        <a href="login.html" style="color: var(--accent-primary);">Inicia sesión</a> para marcar juegos como favoritos, completados o escribir reseñas.
+                    </p>
                 </div>
             `;
         }
@@ -189,13 +249,10 @@ const JuegosUI = (() => {
         `;
     };
 
+    // ===== MODAL DE RESEÑA (SOLO PARA AUTENTICADOS) =====
     const mostrarModalReseña = (juegoId, juegoNombre) => {
         const user = Auth.getCurrentUser();
-        if (!user) {
-            alert('Debes iniciar sesión para escribir una reseña');
-            window.location.href = 'login.html';
-            return;
-        }
+        if (!user) return; // Por seguridad, aunque ya verificamos antes
 
         const existingResena = user.resenas?.find(r => r.juegoId === juegoId);
         
@@ -286,14 +343,19 @@ const JuegosUI = (() => {
         alert('Reseña eliminada');
     };
 
+    // API pública
     return {
         mostrarJuegos,
         mostrarDetallesJuego,
-        toggleCompletado,
-        toggleFavorito,
+        handleCompletado,
+        handleFavorito,
+        handleReseña,
         mostrarModalReseña,
         cerrarModalReseña,
         guardarReseña,
-        eliminarReseña
+        eliminarReseña,
+        // Mantener compatibilidad con código existente
+        toggleCompletado: handleCompletado,
+        toggleFavorito: handleFavorito
     };
 })();
