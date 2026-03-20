@@ -25,7 +25,7 @@ const frontendPath = path.join(__dirname, '../frontend');
 console.log('📁 Sirviendo frontend desde:', frontendPath);
 app.use(express.static(frontendPath));
 
-// ===== ENDPOINT PARA OBTENER JUEGOS CON FILTRO +18 =====
+// ===== ENDPOINT PARA OBTENER JUEGOS CON FILTRO +18 (INCLUYENDO BÚSQUEDAS) =====
 app.get('/api/juegos', async (req, res) => {
     try {
         const { busqueda, page = 1, page_size = 20 } = req.query;
@@ -33,9 +33,10 @@ app.get('/api/juegos', async (req, res) => {
         let url = `https://api.rawg.io/api/games?key=${API_KEY}&page=${page}&page_size=${page_size}`;
         
         if (busqueda) {
-            url += `&search=${encodeURIComponent(busqueda)}&ordering=-rating`;
+            // BÚSQUEDA CON FILTRO +18
+            url += `&search=${encodeURIComponent(busqueda)}&ordering=-rating&metacritic=65,100`;
         } else {
-            // FILTRO ANTI +18: solo juegos con Metacritic entre 65 y 100
+            // JUEGOS DESTACADOS CON FILTRO +18
             url += '&ordering=-rating&dates=2010-01-01,2024-12-31&metacritic=65,100';
         }
         
@@ -43,7 +44,6 @@ app.get('/api/juegos', async (req, res) => {
         
         const response = await axios.get(url);
         
-        // Enviar tanto resultados como total para paginación
         res.json({
             results: response.data.results,
             total: response.data.count || 0
@@ -55,7 +55,7 @@ app.get('/api/juegos', async (req, res) => {
     }
 });
 
-// ===== ENDPOINT PARA DETALLES DE JUEGO (SIN TRADUCCIÓN) =====
+// ===== ENDPOINT PARA DETALLES DE JUEGO =====
 app.get('/api/juego/:id', async (req, res) => {
     try {
         const url = `https://api.rawg.io/api/games/${req.params.id}?key=${API_KEY}`;
@@ -65,7 +65,6 @@ app.get('/api/juego/:id', async (req, res) => {
         const response = await axios.get(url);
         const juego = response.data;
         
-        // Usar descripción original en inglés
         juego.description_es = juego.description_raw || 'Descripción no disponible';
         
         res.json(juego);
@@ -85,5 +84,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📁 Frontend en: ${frontendPath}`);
     console.log(`🔑 API Key configurada: ${API_KEY ? 'Sí' : 'No'}`);
-    console.log(`🛡️ Filtro +18 activado: metacritic=65,100`);
+    console.log(`🛡️ Filtro +18 activado: metacritic=65,100 (incluye búsquedas)`);
 });
