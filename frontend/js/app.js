@@ -1,4 +1,4 @@
-// frontend/js/app.js - VERSIÓN SIN MODAL AUTOMÁTICO
+// frontend/js/app.js - VERSIÓN SIN REDIRECCIONES AUTOMÁTICAS
 const App = (() => {
     const elements = {
         gamesGrid: document.getElementById('gamesGrid'),
@@ -28,7 +28,7 @@ const App = (() => {
         }
     };
 
-    // ===== ACTUALIZAR BOTONES DE AUTENTICACIÓN (sin modales) =====
+    // ===== SOLO MUESTRA BOTONES, NO REDIRIGE =====
     const updateAuthLinks = () => {
         if (elements.authLinks) {
             if (Auth.isAuthenticated()) {
@@ -48,7 +48,7 @@ const App = (() => {
         }
     };
 
-    // ===== CARGA DE JUEGOS =====
+    // ===== CARGA JUEGOS SIEMPRE, SIN IMPORTAR LA SESIÓN =====
     const cargarJuegos = async (page = 1, searchTerm = '') => {
         try {
             toggleLoading(true);
@@ -82,7 +82,6 @@ const App = (() => {
         }
     };
 
-    // ===== BÚSQUEDA =====
     const buscar = () => {
         const searchTerm = elements.searchInput.value.trim();
         currentSearchTerm = searchTerm;
@@ -90,13 +89,12 @@ const App = (() => {
         cargarJuegos(1, searchTerm);
     };
 
-    // ===== DETALLES DEL JUEGO (MODAL SOLO AQUÍ) =====
     const mostrarDetalle = async (id) => {
         try {
             toggleLoading(true);
             const juego = await API.obtenerJuegoDetalle(id);
             JuegosUI.mostrarDetallesJuego(juego);
-            elements.gameModal.style.display = 'block'; // ← ÚNICO lugar donde se abre el modal
+            elements.gameModal.style.display = 'block';
         } catch (error) {
             console.error('Error:', error);
             alert('Error al cargar los detalles');
@@ -133,12 +131,13 @@ const App = (() => {
         });
     };
 
+    // ===== INIT: NADA DE REDIRECCIONES, SOLO CARGA NORMAL =====
     const init = () => {
         console.log('🚀 Iniciando GameVault...');
         setupEventListeners();
-        updateAuthLinks(); // ← Esto SOLO pone los botones, NO abre modales
+        updateAuthLinks(); // Esto solo pone "Iniciar Sesión/Registrarse"
         Paginacion.init(handlePageChange);
-        cargarJuegos(1); // ← Carga los juegos, NO abre modales
+        cargarJuegos(1); // Esto carga los juegos, pase lo que pase con la sesión
     };
 
     return { init, buscar, mostrarDetalle, cerrarModal };
