@@ -1,4 +1,4 @@
-// js/juegos.js
+// frontend/js/juegos.js - VERSIÓN QUE USA DESCRIPCIÓN TRADUCIDA
 const JuegosUI = (() => {
     const getRatingClass = (rating) => {
         if (rating >= 4) return 'rating-high';
@@ -36,7 +36,7 @@ const JuegosUI = (() => {
                     <button class="action-button ${isFavorito ? 'active' : ''}" onclick="event.stopPropagation(); JuegosUI.toggleFavorito(${juego.id})">
                         <i class="fas ${isFavorito ? 'fa-heart' : 'fa-heart'}"></i>
                     </button>
-                    <button class="action-button" onclick="event.stopPropagation(); JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name}')">
+                    <button class="action-button" onclick="event.stopPropagation(); JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
                         <i class="fas fa-star"></i>
                     </button>
                 </div>
@@ -86,7 +86,6 @@ const JuegosUI = (() => {
         }
 
         Auth.updateUser(user);
-        // Recargar la vista actual
         location.reload();
     };
 
@@ -102,7 +101,6 @@ const JuegosUI = (() => {
         }
 
         Auth.updateUser(user);
-        // Recargar la vista actual
         location.reload();
     };
 
@@ -112,12 +110,10 @@ const JuegosUI = (() => {
         const imagen = juego.background_image || 'https://via.placeholder.com/800x400/1a1e24/6366f1?text=Sin+Imagen';
         const ratingClass = getRatingClass(juego.rating);
         const fecha = formatDate(juego.released);
-        const descripcion = juego.description_raw || 'No hay descripción disponible para este juego.';
         
-        const descripcionCorta = descripcion.length > 500 
-            ? descripcion.substring(0, 500) + '...' 
-            : descripcion;
-
+        // USAR LA DESCRIPCIÓN TRADUCIDA (si existe)
+        const descripcion = juego.description_es || juego.description_raw || 'No hay descripción disponible para este juego.';
+        
         const plataformas = juego.platforms 
             ? juego.platforms.map(p => p.platform.name).join(', ')
             : 'Plataformas no disponibles';
@@ -147,7 +143,7 @@ const JuegosUI = (() => {
                         <i class="fas ${isFavorito ? 'fa-heart' : 'fa-heart'}"></i>
                         ${isFavorito ? 'Favorito' : 'Añadir a favoritos'}
                     </button>
-                    <button class="action-button" onclick="JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name}')">
+                    <button class="action-button" onclick="JuegosUI.mostrarModalReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
                         <i class="fas fa-star"></i>
                         ${userResena ? 'Editar reseña' : 'Escribir reseña'}
                     </button>
@@ -186,7 +182,8 @@ const JuegosUI = (() => {
             
             <div class="game-details-description">
                 <h3><i class="fas fa-align-left"></i> Descripción</h3>
-                <p>${descripcionCorta}</p>
+                <p>${descripcion}</p>
+                ${juego.description_es ? '<small><i>Traducido automáticamente</i></small>' : ''}
             </div>
             
             ${userActionsHTML}

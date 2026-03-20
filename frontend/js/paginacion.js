@@ -1,79 +1,56 @@
-// js/paginacion.js
+// frontend/js/paginacion.js - VERSIÓN FINAL CON TOTAL REAL
 const Paginacion = (() => {
     let currentPage = 1;
     let totalPages = 1;
-    let currentSearchTerm = '';
-    let itemsPerPage = 20;
     let onPageChangeCallback = null;
+    let itemsPerPage = 20;
 
     const init = (callback) => {
         onPageChangeCallback = callback;
-        renderPagination();
+        render();
     };
 
-    const renderPagination = () => {
-        const container = document.getElementById('paginationContainer');
+    const render = (containerId = 'paginationContainer') => {
+        const container = document.getElementById(containerId);
         if (!container) return;
 
-        const paginationHTML = `
-            <div class="pagination-container">
-                <button class="pagination-button" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>
-                    <i class="fas fa-chevron-left"></i> Anterior
-                </button>
-                
-                <div class="pagination-numbers" id="pageNumbers">
-                    ${generatePageNumbers()}
-                </div>
-                
-                <button class="pagination-button" id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>
-                    Siguiente <i class="fas fa-chevron-right"></i>
-                </button>
-                
-                <div class="pagination-info">
-                    Página ${currentPage} de ${totalPages}
-                </div>
-            </div>
-        `;
+        // Solo mostrar paginación si hay más de 1 página
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
 
-        container.innerHTML = paginationHTML;
+        let html = '<div class="pagination-container">';
+        
+        // Botón anterior
+        html += `<button class="pagination-button" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i> Anterior
+        </button>`;
+        
+        // Información de página
+        html += `<span class="pagination-info">Página ${currentPage} de ${totalPages}</span>`;
+        
+        // Botón siguiente
+        html += `<button class="pagination-button" id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>
+            Siguiente <i class="fas fa-chevron-right"></i>
+        </button>`;
+        
+        html += '</div>';
+
+        container.innerHTML = html;
 
         // Event listeners
-        document.getElementById('prevPage')?.addEventListener('click', () => goToPage(currentPage - 1));
-        document.getElementById('nextPage')?.addEventListener('click', () => goToPage(currentPage + 1));
-        
-        document.querySelectorAll('.page-number').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const page = parseInt(e.target.dataset.page);
-                goToPage(page);
-            });
+        document.getElementById('prevPage')?.addEventListener('click', () => {
+            if (currentPage > 1 && onPageChangeCallback) {
+                goToPage(currentPage - 1);
+            }
         });
-    };
 
-    const generatePageNumbers = () => {
-        let pages = [];
-        const maxVisible = 5;
-        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-        let end = Math.min(totalPages, start + maxVisible - 1);
-
-        if (end - start + 1 < maxVisible) {
-            start = Math.max(1, end - maxVisible + 1);
-        }
-
-        if (start > 1) {
-            pages.push('<span class="page-number" data-page="1">1</span>');
-            if (start > 2) pages.push('<span class="page-dots">...</span>');
-        }
-
-        for (let i = start; i <= end; i++) {
-            pages.push(`<span class="page-number ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</span>`);
-        }
-
-        if (end < totalPages) {
-            if (end < totalPages - 1) pages.push('<span class="page-dots">...</span>');
-            pages.push(`<span class="page-number" data-page="${totalPages}">${totalPages}</span>`);
-        }
-
-        return pages.join('');
+        document.getElementById('nextPage')?.addEventListener('click', () => {
+            if (currentPage < totalPages && onPageChangeCallback) {
+                goToPage(currentPage + 1);
+            }
+        });
     };
 
     const goToPage = (page) => {
@@ -82,10 +59,10 @@ const Paginacion = (() => {
         currentPage = page;
         
         if (onPageChangeCallback) {
-            onPageChangeCallback(currentPage, currentSearchTerm);
+            onPageChangeCallback(currentPage);
         }
         
-        renderPagination();
+        render();
         
         // Scroll suave hacia arriba
         window.scrollTo({
@@ -94,25 +71,28 @@ const Paginacion = (() => {
         });
     };
 
-    const setTotalPages = (total) => {
-        totalPages = Math.ceil(total / itemsPerPage);
-        renderPagination();
+    const setTotalPages = (totalJuegos) => {
+        // Calcular total de páginas (API de RAWG permite hasta 100 páginas máx)
+        const maxPages = Math.min(Math.ceil(totalJuegos / itemsPerPage), 100);
+        totalPages = maxPages;
+        console.log(`📊 Total juegos: ${totalJuegos}, Páginas: ${totalPages}`);
+        render();
     };
 
     const setCurrentPage = (page) => {
         currentPage = page;
-        renderPagination();
+        render();
     };
 
     const setSearchTerm = (term) => {
-        currentSearchTerm = term;
-        currentPage = 1; // Resetear a primera página en nueva búsqueda
+        // Resetear a primera página en nueva búsqueda
+        currentPage = 1;
     };
 
     const reset = () => {
         currentPage = 1;
         totalPages = 1;
-        renderPagination();
+        render();
     };
 
     const getCurrentPage = () => currentPage;
