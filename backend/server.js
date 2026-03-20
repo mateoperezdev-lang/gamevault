@@ -25,28 +25,7 @@ const frontendPath = path.join(__dirname, '../frontend');
 console.log('📁 Sirviendo frontend desde:', frontendPath);
 app.use(express.static(frontendPath));
 
-// ===== FUNCIÓN DE TRADUCCIÓN CON LIBRETRANSLATE =====
-async function traducirTexto(texto, idiomaDestino = 'es') {
-    if (!texto || texto.length < 20) return texto; // No traducir textos muy cortos
-    
-    try {
-        const response = await axios.post('https://libretranslate.com/translate', {
-            q: texto.substring(0, 5000), // Limitar a 5000 caracteres
-            source: 'en',
-            target: idiomaDestino,
-            format: 'text'
-        }, {
-            timeout: 5000 // Timeout de 5 segundos
-        });
-        
-        return response.data.translatedText;
-    } catch (error) {
-        console.log('⚠️ Error en traducción, usando original:', error.message);
-        return texto; // Fallback a inglés
-    }
-}
-
-// ===== ENDPOINT PARA OBTENER JUEGOS CON PAGINACIÓN =====
+// ===== ENDPOINT PARA OBTENER JUEGOS CON FILTRO +18 =====
 app.get('/api/juegos', async (req, res) => {
     try {
         const { busqueda, page = 1, page_size = 20 } = req.query;
@@ -56,7 +35,8 @@ app.get('/api/juegos', async (req, res) => {
         if (busqueda) {
             url += `&search=${encodeURIComponent(busqueda)}&ordering=-rating`;
         } else {
-            url += '&ordering=-rating&dates=2010-01-01,2024-12-31';
+            // FILTRO ANTI +18: solo juegos con Metacritic entre 65 y 100
+            url += '&ordering=-rating&dates=2010-01-01,2024-12-31&metacritic=65,100';
         }
         
         console.log('📡 Consultando RAWG:', url.replace(API_KEY, 'HIDDEN'));
@@ -75,7 +55,7 @@ app.get('/api/juegos', async (req, res) => {
     }
 });
 
-// ===== ENDPOINT PARA DETALLES DE JUEGO CON TRADUCCIÓN =====
+// ===== ENDPOINT PARA DETALLES DE JUEGO (SIN TRADUCCIÓN) =====
 app.get('/api/juego/:id', async (req, res) => {
     try {
         const url = `https://api.rawg.io/api/games/${req.params.id}?key=${API_KEY}`;
@@ -85,18 +65,8 @@ app.get('/api/juego/:id', async (req, res) => {
         const response = await axios.get(url);
         const juego = response.data;
         
-        // TRADUCIR DESCRIPCIÓN AL ESPAÑOL
-        if (juego.description_raw && juego.description_raw.length > 50) {
-            console.log('🔄 Traduciendo descripción...');
-            juego.description_es = await traducirTexto(juego.description_raw);
-        } else {
-            juego.description_es = juego.description_raw || 'Descripción no disponible';
-        }
-        
-        // También traducir el nombre si quieres (opcional)
-        // if (juego.name) {
-        //     juego.name_es = await traducirTexto(juego.name);
-        // }
+        // Usar descripción original en inglés
+        juego.description_es = juego.description_raw || 'Descripción no disponible';
         
         res.json(juego);
         
@@ -115,4 +85,5 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📁 Frontend en: ${frontendPath}`);
     console.log(`🔑 API Key configurada: ${API_KEY ? 'Sí' : 'No'}`);
+    console.log(`🛡️ Filtro +18 activado: metacritic=65,100`);
 });
