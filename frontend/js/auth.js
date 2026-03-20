@@ -1,4 +1,4 @@
-// js/auth.js
+// frontend/js/auth.js - VERSIÓN CORREGIDA (sin modales automáticos)
 const Auth = (() => {
     const USERS_KEY = 'gamevault_users';
     const CURRENT_USER_KEY = 'gamevault_current_user';
@@ -24,7 +24,7 @@ const Auth = (() => {
             id: Date.now().toString(),
             username,
             email,
-            password, // En producción debería estar hasheada
+            password,
             biblioteca: [],
             completados: [],
             favoritos: [],
@@ -52,7 +52,7 @@ const Auth = (() => {
 
     const logout = () => {
         localStorage.removeItem(CURRENT_USER_KEY);
-        window.location.href = 'login.html';
+        window.location.href = 'index.html'; // Redirige al inicio
     };
 
     const getCurrentUser = () => {
@@ -75,7 +75,7 @@ const Auth = (() => {
         }
     };
 
-    // Event listeners para los formularios
+    // SOLO ESTO - NADA DE MODALES AUTOMÁTICOS
     document.addEventListener('DOMContentLoaded', () => {
         init();
 
@@ -127,14 +127,6 @@ const Auth = (() => {
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
-        }
-
-        // Redirigir si no está autenticado en páginas protegidas
-        const protectedPages = ['perfil.html'];
-        const currentPage = window.location.pathname.split('/').pop();
-        
-        if (protectedPages.includes(currentPage) && !isAuthenticated()) {
-            window.location.href = 'login.html';
         }
     });
 
