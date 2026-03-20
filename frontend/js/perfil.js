@@ -1,43 +1,33 @@
-// frontend/js/perfil.js - VERSIÓN FINAL
-// Solo redirige al login si no hay sesión (comportamiento correcto para perfil)
-
+// frontend/js/perfil.js - VERSIÓN COMPLETA
 const Perfil = (() => {
-    // ===== CARGA INICIAL DEL PERFIL =====
     const cargarPerfil = async () => {
-        // Verificar si estamos en la página de perfil
         const profileUsername = document.getElementById('profileUsername');
         const profileEmail = document.getElementById('profileEmail');
         const totalJuegos = document.getElementById('totalJuegos');
         const totalCompletados = document.getElementById('totalCompletados');
         const totalFavoritos = document.getElementById('totalFavoritos');
         
-        // Si no estamos en perfil.html, salir sin error
         if (!profileUsername) return;
         
-        // ===== VERIFICAR SESIÓN - ÚNICA REDIRECCIÓN AUTOMÁTICA =====
         const user = Auth.getCurrentUser();
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
 
-        // Mostrar información del usuario
         if (profileUsername) profileUsername.textContent = user.username;
         if (profileEmail) profileEmail.textContent = user.email;
         
-        // Mostrar estadísticas
         if (totalJuegos) totalJuegos.textContent = user.biblioteca?.length || 0;
         if (totalCompletados) totalCompletados.textContent = user.completados?.length || 0;
         if (totalFavoritos) totalFavoritos.textContent = user.favoritos?.length || 0;
 
-        // Cargar las diferentes secciones
         await cargarBiblioteca(user);
         await cargarCompletados(user);
         await cargarFavoritos(user);
         cargarReseñas(user);
     };
 
-    // ===== CARGAR BIBLIOTECA =====
     const cargarBiblioteca = async (user) => {
         const container = document.getElementById('bibliotecaGrid');
         if (!container) return;
@@ -48,10 +38,8 @@ const Perfil = (() => {
         }
 
         try {
-            // Mostrar loading
             container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando biblioteca...</div>';
             
-            // Cargar detalles de cada juego
             const juegos = await Promise.all(
                 user.biblioteca.map(async (id) => {
                     try {
@@ -63,11 +51,9 @@ const Perfil = (() => {
                 })
             );
             
-            // Filtrar juegos nulos (errores)
             const juegosValidos = juegos.filter(j => j !== null);
             
             if (juegosValidos.length > 0) {
-                // Usar la misma función de juegos.js para mostrar las tarjetas
                 JuegosUI.mostrarJuegos(juegosValidos, container, true);
             } else {
                 container.innerHTML = '<p class="no-items">No se pudieron cargar tus juegos</p>';
@@ -78,7 +64,6 @@ const Perfil = (() => {
         }
     };
 
-    // ===== CARGAR COMPLETADOS =====
     const cargarCompletados = async (user) => {
         const container = document.getElementById('completadosGrid');
         if (!container) return;
@@ -115,7 +100,6 @@ const Perfil = (() => {
         }
     };
 
-    // ===== CARGAR FAVORITOS =====
     const cargarFavoritos = async (user) => {
         const container = document.getElementById('favoritosGrid');
         if (!container) return;
@@ -152,7 +136,6 @@ const Perfil = (() => {
         }
     };
 
-    // ===== CARGAR RESEÑAS =====
     const cargarReseñas = async (user) => {
         const container = document.getElementById('reseñasList');
         if (!container) return;
@@ -165,7 +148,6 @@ const Perfil = (() => {
         try {
             container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando reseñas...</div>';
             
-            // Ordenar reseñas por fecha (más recientes primero)
             const reseñasOrdenadas = [...user.resenas].sort((a, b) => 
                 new Date(b.fecha) - new Date(a.fecha)
             );
@@ -213,7 +195,6 @@ const Perfil = (() => {
                 })
             );
 
-            // Filtrar reseñas vacías (errores)
             const reseñasValidas = reseñasHTML.filter(html => html !== '');
             
             if (reseñasValidas.length > 0) {
@@ -227,7 +208,6 @@ const Perfil = (() => {
         }
     };
 
-    // ===== FUNCIÓN PARA CAMBIAR TABS =====
     window.showTab = (tabName) => {
         const tabs = document.querySelectorAll('.tab-button');
         const contents = document.querySelectorAll('.tab-content');
@@ -237,15 +217,12 @@ const Perfil = (() => {
         tabs.forEach(btn => btn.classList.remove('active'));
         contents.forEach(content => content.classList.remove('active'));
         
-        // Activar el tab seleccionado
         event.target.classList.add('active');
         const selectedTab = document.getElementById(tabName);
         if (selectedTab) selectedTab.classList.add('active');
         
-        // Scroll suave al contenido
         selectedTab?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
-    // ===== INICIALIZACIÓN =====
     document.addEventListener('DOMContentLoaded', cargarPerfil);
 })();

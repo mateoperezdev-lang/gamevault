@@ -1,4 +1,4 @@
-// frontend/js/juegos.js - VERSIÓN COMPLETA
+// frontend/js/juegos.js - VERSIÓN COMPLETA CON BIBLIOTECA
 const JuegosUI = (() => {
     const getRatingClass = (rating) => {
         if (rating >= 4) return 'rating-high';
@@ -25,22 +25,35 @@ const JuegosUI = (() => {
         let actionsHTML = '';
         if (showActions) {
             const user = Auth.isAuthenticated() ? Auth.getCurrentUser() : null;
+            const isBiblioteca = user?.biblioteca?.includes(juego.id) || false;
             const isCompletado = user?.completados?.includes(juego.id) || false;
             const isFavorito = user?.favoritos?.includes(juego.id) || false;
 
             actionsHTML = `
                 <div class="game-card-actions">
+                    <button class="action-button ${isBiblioteca ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); JuegosUI.handleBiblioteca(${juego.id})" 
+                            title="Agregar a biblioteca">
+                        <i class="fas ${isBiblioteca ? 'fa-check-circle' : 'fa-plus-circle'}"></i>
+                        <span>Biblioteca</span>
+                    </button>
                     <button class="action-button ${isCompletado ? 'active' : ''}" 
-                            onclick="event.stopPropagation(); JuegosUI.handleCompletado(${juego.id})">
-                        <i class="fas ${isCompletado ? 'fa-check-circle' : 'fa-circle'}"></i>
+                            onclick="event.stopPropagation(); JuegosUI.handleCompletado(${juego.id})"
+                            title="Marcar como completado">
+                        <i class="fas ${isCompletado ? 'fa-check-double' : 'fa-check'}"></i>
+                        <span>Completado</span>
                     </button>
                     <button class="action-button ${isFavorito ? 'active' : ''}" 
-                            onclick="event.stopPropagation(); JuegosUI.handleFavorito(${juego.id})">
+                            onclick="event.stopPropagation(); JuegosUI.handleFavorito(${juego.id})"
+                            title="Agregar a favoritos">
                         <i class="fas ${isFavorito ? 'fa-heart' : 'fa-heart'}"></i>
+                        <span>Favorito</span>
                     </button>
                     <button class="action-button" 
-                            onclick="event.stopPropagation(); JuegosUI.handleReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')">
+                            onclick="event.stopPropagation(); JuegosUI.handleReseña(${juego.id}, '${juego.name.replace(/'/g, "\\'")}')"
+                            title="Escribir reseña">
                         <i class="fas fa-star"></i>
+                        <span>Reseña</span>
                     </button>
                 </div>
             `;
@@ -77,10 +90,19 @@ const JuegosUI = (() => {
         });
     };
 
-    // ===== MANEJADORES CON REDIRECCIÓN INTELIGENTE =====
+    // ===== MANEJADORES =====
+    const handleBiblioteca = (juegoId) => {
+        if (!Auth.isAuthenticated()) {
+            sessionStorage.setItem('redirectAfterLogin', 'index.html');
+            alert('Debes iniciar sesión para agregar juegos a tu biblioteca');
+            window.location.href = 'login.html';
+            return;
+        }
+        toggleBiblioteca(juegoId);
+    };
+
     const handleCompletado = (juegoId) => {
         if (!Auth.isAuthenticated()) {
-            // Guardar que venía de index.html
             sessionStorage.setItem('redirectAfterLogin', 'index.html');
             alert('Debes iniciar sesión para marcar juegos como completados');
             window.location.href = 'login.html';
@@ -107,6 +129,22 @@ const JuegosUI = (() => {
             return;
         }
         mostrarModalReseña(juegoId, juegoNombre);
+    };
+
+    // ===== ACCIONES REALES =====
+    const toggleBiblioteca = (juegoId) => {
+        const user = Auth.getCurrentUser();
+        if (!user) return;
+
+        const index = user.biblioteca.indexOf(juegoId);
+        if (index === -1) {
+            user.biblioteca.push(juegoId);
+        } else {
+            user.biblioteca.splice(index, 1);
+        }
+
+        Auth.updateUser(user);
+        location.reload();
     };
 
     const toggleCompletado = (juegoId) => {
@@ -139,6 +177,7 @@ const JuegosUI = (() => {
         location.reload();
     };
 
+    // ===== DETALLES DEL JUEGO =====
     const mostrarDetallesJuego = (juego) => {
         const detallesContainer = document.getElementById('gameDetails');
         
@@ -162,13 +201,18 @@ const JuegosUI = (() => {
         let userActionsHTML = '';
         if (Auth.isAuthenticated()) {
             const user = Auth.getCurrentUser();
+            const isBiblioteca = user.biblioteca?.includes(juego.id) || false;
             const isCompletado = user.completados?.includes(juego.id) || false;
             const isFavorito = user.favoritos?.includes(juego.id) || false;
 
             userActionsHTML = `
                 <div class="game-details-actions">
+                    <button class="action-button ${isBiblioteca ? 'active' : ''}" onclick="JuegosUI.handleBiblioteca(${juego.id})">
+                        <i class="fas ${isBiblioteca ? 'fa-check-circle' : 'fa-plus-circle'}"></i>
+                        ${isBiblioteca ? 'En biblioteca' : 'Agregar a biblioteca'}
+                    </button>
                     <button class="action-button ${isCompletado ? 'active' : ''}" onclick="JuegosUI.handleCompletado(${juego.id})">
-                        <i class="fas ${isCompletado ? 'fa-check-circle' : 'fa-circle'}"></i>
+                        <i class="fas ${isCompletado ? 'fa-check-double' : 'fa-check'}"></i>
                         ${isCompletado ? 'Completado' : 'Marcar como completado'}
                     </button>
                     <button class="action-button ${isFavorito ? 'active' : ''}" onclick="JuegosUI.handleFavorito(${juego.id})">
@@ -186,7 +230,7 @@ const JuegosUI = (() => {
                 <div class="game-details-actions" style="justify-content: center; padding: 20px;">
                     <p style="color: var(--text-secondary);">
                         <i class="fas fa-info-circle"></i> 
-                        <a href="login.html" style="color: var(--accent-primary);">Inicia sesión</a> para marcar juegos como favoritos, completados o escribir reseñas.
+                        <a href="login.html" style="color: var(--accent-primary);">Inicia sesión</a> para agregar juegos a tu biblioteca, marcar como favoritos, completados o escribir reseñas.
                     </p>
                 </div>
             `;
@@ -230,6 +274,7 @@ const JuegosUI = (() => {
         `;
     };
 
+    // ===== MODAL DE RESEÑA =====
     const mostrarModalReseña = (juegoId, juegoNombre) => {
         const user = Auth.getCurrentUser();
         if (!user) return;
@@ -326,6 +371,7 @@ const JuegosUI = (() => {
     return {
         mostrarJuegos,
         mostrarDetallesJuego,
+        handleBiblioteca,
         handleCompletado,
         handleFavorito,
         handleReseña,
